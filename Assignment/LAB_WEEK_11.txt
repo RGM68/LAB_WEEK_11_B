@@ -1,0 +1,43 @@
+Rafi Ghadhanfar Muhammad
+00000108353
+
+1. When a user takes a picture, that picture is stored in a path based on the given URI. In which part of the code handles this?
+
+fun insertImageToStore(fileInfo: FileInfo?) {
+    fileInfo?.let {
+        insertToStore(
+            fileInfo,
+            mediaContentHelper.getImageContentUri(),
+            mediaContentHelper.generateImageContentValues(it)
+        )
+    }
+}
+
+private fun insertToStore(fileInfo: FileInfo, contentUri: Uri, contentValues: ContentValues) {
+    executor.execute {
+        val insertedUri = contentResolver.insert(contentUri, contentValues)
+        insertedUri?.let {
+            val inputStream = contentResolver.openInputStream(fileInfo.uri)
+            val outputStream = contentResolver.openOutputStream(insertedUri)
+            IOUtils.copy(inputStream, outputStream)
+        }
+    }
+}
+
+2. In FileInfo.kt, what does the first and fourth attribute refer to?
+
+First attribute (uri: Uri):
+The temporary FileProvider URI used by the camera app to write the captured image or video into your app's private external storage before it is copied to MediaStore.
+
+Fourth attribute (relativePath: String):
+This defines the folder inside MediaStore where the final file will be stored, such as Pictures/ or Movies/.
+
+3. Bonus: Chronological order from taking a picture until it is stored in MediaStore:
+
+1. Photo button → openImageCapture()
+2. generatePhotoUri() creates FileInfo
+3. takePictureLauncher launches the camera app using photoInfo.uri
+4. The camera saves the captured file to the temporary URI
+5. insertImageToStore(photoInfo) is called
+6. insertToStore() inserts a new MediaStore entry and copies the file from the FileProvider URI into the MediaStore location
+7. Image appears in MediaStore -> gallery/photos app
